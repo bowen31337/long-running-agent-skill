@@ -1,15 +1,33 @@
-# Long Running Agent Skill
+# Autonomous Agent Framework
 
-An open Agent Skills standard-compliant skill for building autonomous, long-running AI agents that work with **any AI agent framework** (Cursor, OpenCode, Claude, etc.). Parse PRDs/specifications, generate structured task lists, and execute tasks autonomously with state persistence and recovery.
+🚀 **Professional-grade Agent Skills framework** for building production-ready autonomous AI agents with intelligent API rotation, advanced state management, and universal compatibility across all AI platforms.
 
-## 🌟 Universal Compatibility
+[![Agent Skills Compliant](https://img.shields.io/badge/Agent%20Skills-Compliant-blue)](https://agentskills.io)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Production Ready](https://img.shields.io/badge/Production-Ready-green.svg)](https://github.com/bowen31337/autonomous-agent-framework)
 
-This skill follows the [Agent Skills open standard](https://agentskills.io) and works with:
+**Enterprise-ready framework** that transforms PRDs/specifications into autonomous execution workflows with intelligent API management, cross-session persistence, and adaptive learning capabilities.
+
+## 🌟 Universal Compatibility & Enterprise Features
+
+This framework follows the [Agent Skills open standard](https://agentskills.io) and provides enterprise-grade capabilities:
+
+### **🎯 Platform Compatibility**
 - **Cursor** - IDE-integrated development workflows
 - **OpenCode** - Collaborative development environments  
 - **Claude** - Conversation-based agent interactions
 - **Custom AI Agents** - Any agent with file system access
 - **Future Platforms** - Framework-agnostic design ensures compatibility
+
+### **🚀 Production-Ready Features**
+- **Intelligent API Rotation** - Load balancing across multiple API endpoints
+- **Advanced Rate Limiting** - Prevent quota exhaustion with smart throttling
+- **State Persistence** - Resume work across sessions and interruptions
+- **Error Recovery** - Graceful handling of failures with automatic retry
+- **Learning System** - Continuous improvement from execution patterns
+- **Parallel Processing** - Thread-safe concurrent task execution
+- **Enterprise Security** - Secure credential management and audit trails
 
 ## Installation
 
@@ -17,18 +35,18 @@ This skill follows the [Agent Skills open standard](https://agentskills.io) and 
 
 ```bash
 # One-line installation (recommended)
-curl -sSL https://raw.githubusercontent.com/bowen31337/long-running-agent-skill/main/scripts/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/bowen31337/autonomous-agent-framework/main/scripts/install.sh | bash
 
 # Or specify custom directory
-curl -sSL https://raw.githubusercontent.com/bowen31337/long-running-agent-skill/main/scripts/install.sh | bash -s my-project
+curl -sSL https://raw.githubusercontent.com/bowen31337/autonomous-agent-framework/main/scripts/install.sh | bash -s my-project
 ```
 
 ### Manual Installation
 
 ```bash
 # Clone from GitHub
-git clone https://github.com/bowen31337/long-running-agent-skill.git
-cd long-running-agent-skill
+git clone https://github.com/bowen31337/autonomous-agent-framework.git
+cd autonomous-agent-framework
 
 # Install uv for fast Python package management
 curl -LsSf https://astral.sh/uv/install.sh | sh

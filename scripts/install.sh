@@ -1,6 +1,6 @@
 #!/bin/bash
 # Long-Running Agent Skill - Quick Installation Script
-# Usage: curl -sSL https://raw.githubusercontent.com/agent-skills/long-running-agent/main/scripts/install.sh | bash
+# Usage: curl -sSL https://raw.githubusercontent.com/bowen31337/autonomous-agent-framework/main/scripts/install.sh | bash
 
 set -e
 
@@ -17,7 +17,7 @@ fi
 echo "✅ uv is available: $(uv --version)"
 
 # Create project directory
-PROJECT_DIR="${1:-long-running-agent-skill}"
+PROJECT_DIR="${1:-autonomous-agent-framework}"
 echo "📁 Creating project directory: $PROJECT_DIR"
 mkdir -p "$PROJECT_DIR"
 cd "$PROJECT_DIR"
@@ -25,13 +25,13 @@ cd "$PROJECT_DIR"
 # Clone the repository
 echo "📥 Downloading skill files..."
 if command -v git &> /dev/null; then
-    git clone https://github.com/bowen31337/long-running-agent-skill.git .
+    git clone https://github.com/bowen31337/autonomous-agent-framework.git .
 else
     # Fallback: download as ZIP
-    curl -L https://github.com/bowen31337/long-running-agent-skill/archive/main.zip -o skill.zip
+    curl -L https://github.com/bowen31337/autonomous-agent-framework/archive/main.zip -o skill.zip
     unzip skill.zip
-    mv long-running-agent-skill-main/* .
-    rm -rf long-running-agent-skill-main skill.zip
+    mv autonomous-agent-framework-main/* .
+    rm -rf autonomous-agent-framework-main skill.zip
 fi
 
 # Set up Python environment (optional)
