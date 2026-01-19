@@ -17,18 +17,18 @@ This skill follows the [Agent Skills open standard](https://agentskills.io) and 
 
 ```bash
 # One-line installation (recommended)
-curl -sSL https://raw.githubusercontent.com/agent-skills/long-running-agent/main/scripts/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/bowen31337/long-running-agent-skill/main/scripts/install.sh | bash
 
 # Or specify custom directory
-curl -sSL https://raw.githubusercontent.com/agent-skills/long-running-agent/main/scripts/install.sh | bash -s my-project
+curl -sSL https://raw.githubusercontent.com/bowen31337/long-running-agent-skill/main/scripts/install.sh | bash -s my-project
 ```
 
 ### Manual Installation
 
 ```bash
 # Clone from GitHub
-git clone https://github.com/agent-skills/long-running-agent.git
-cd long-running-agent
+git clone https://github.com/bowen31337/long-running-agent-skill.git
+cd long-running-agent-skill
 
 # Install uv for fast Python package management
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -45,7 +45,7 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 skills install long-running-agent
 
 # Or add from GitHub URL directly in compatible agents
-# GitHub URL: https://github.com/agent-skills/long-running-agent
+# GitHub URL: https://github.com/bowen31337/long-running-agent-skill
 ```
 
 ### Manual Integration

@@ -25,13 +25,13 @@ cd "$PROJECT_DIR"
 # Clone the repository
 echo "📥 Downloading skill files..."
 if command -v git &> /dev/null; then
-    git clone https://github.com/agent-skills/long-running-agent.git .
+    git clone https://github.com/bowen31337/long-running-agent-skill.git .
 else
     # Fallback: download as ZIP
-    curl -L https://github.com/agent-skills/long-running-agent/archive/main.zip -o skill.zip
+    curl -L https://github.com/bowen31337/long-running-agent-skill/archive/main.zip -o skill.zip
     unzip skill.zip
-    mv long-running-agent-main/* .
-    rm -rf long-running-agent-main skill.zip
+    mv long-running-agent-skill-main/* .
+    rm -rf long-running-agent-skill-main skill.zip
 fi
 
 # Set up Python environment (optional)
@@ -65,4 +65,4 @@ echo "  - Copy functions from scripts/universal_example.py into your AI agent"
 echo "  - Follow patterns in references/ for your specific agent framework"
 echo "  - Works with: Cursor, OpenCode, Claude, and custom agents"
 echo ""
-echo "📚 Documentation: https://github.com/agent-skills/long-running-agent"
+echo "📚 Documentation: https://github.com/bowen31337/long-running-agent-skill"
