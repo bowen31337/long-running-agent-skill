@@ -187,6 +187,23 @@ def parse_prd_to_tasks(prd_content: str, project_name: str) -> Dict:
     # Returns JSON with full task metadata
 ```
 
+### Intelligent API Rotation & Rate Limiting
+
+Manages multiple API endpoints with automatic rotation, rate limiting, and load balancing:
+
+```python
+# Setup API rotation with multiple endpoints
+api_configs = [
+    {"name": "primary_api", "base_url": "https://api.example.com", "api_key": "key1", "rate_limit": 100},
+    {"name": "backup_api", "base_url": "https://backup.example.com", "api_key": "key2", "rate_limit": 60}
+]
+setup_api_rotation(api_configs)
+
+# Make API calls with automatic rotation and error handling
+result = make_api_call(request_function, endpoint, data)
+# Automatically handles: rate limits, quota management, failover, load balancing
+```
+
 ### Agent-Agnostic State Management
 
 JSON-based persistence that works everywhere:

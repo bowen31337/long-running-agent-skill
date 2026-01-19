@@ -9,8 +9,9 @@ any AI agent framework (Cursor, OpenCode, Claude, etc.).
 The agent can:
 1. Parse PRD/specifications into structured task lists
 2. Execute tasks autonomously with dependency management
-3. Persist state across sessions using standard JSON files
-4. Learn from execution patterns for continuous improvement
+3. Manage API rotation with intelligent load balancing and rate limiting
+4. Persist state across sessions using standard JSON files
+5. Learn from execution patterns for continuous improvement
 
 Setup with uv (recommended):
     # Install uv if not already installed
@@ -35,9 +36,12 @@ import re
 import os
 import threading
 import concurrent.futures
+import time
+import random
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
+from dataclasses import dataclass, field
 
 class TaskStatus(Enum):
     PENDING = "pending"
@@ -45,6 +49,233 @@ class TaskStatus(Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     BLOCKED = "blocked"
+
+class APIStatus(Enum):
+    ACTIVE = "active"
+    RATE_LIMITED = "rate_limited"
+    QUOTA_EXCEEDED = "quota_exceeded"
+    ERROR = "error"
+    DISABLED = "disabled"
+
+@dataclass
+class APIEndpoint:
+    """Represents an API endpoint with rotation capabilities."""
+    name: str
+    base_url: str
+    api_key: str
+    rate_limit: int = 60  # requests per minute
+    quota_limit: int = 1000  # requests per day
+    current_usage: int = 0
+    daily_usage: int = 0
+    last_request_time: float = 0
+    status: APIStatus = APIStatus.ACTIVE
+    error_count: int = 0
+    last_reset_time: float = field(default_factory=time.time)
+    
+    def can_make_request(self) -> bool:
+        """Check if endpoint can handle a request."""
+        if self.status != APIStatus.ACTIVE:
+            return False
+            
+        current_time = time.time()
+        
+        # Reset counters if minute has passed
+        if current_time - self.last_request_time >= 60:
+            self.current_usage = 0
+            self.last_request_time = current_time
+        
+        # Reset daily usage if day has passed
+        if current_time - self.last_reset_time >= 86400:  # 24 hours
+            self.daily_usage = 0
+            self.last_reset_time = current_time
+        
+        # Check limits
+        return (self.current_usage < self.rate_limit and 
+                self.daily_usage < self.quota_limit)
+    
+    def record_request(self, success: bool = True):
+        """Record a request and update usage counters."""
+        self.current_usage += 1
+        self.daily_usage += 1
+        self.last_request_time = time.time()
+        
+        if not success:
+            self.error_count += 1
+        else:
+            self.error_count = max(0, self.error_count - 1)  # Decay errors on success
+
+class APIRotationManager:
+    """Manages multiple API endpoints with intelligent rotation."""
+    
+    def __init__(self):
+        self.endpoints: List[APIEndpoint] = []
+        self.current_index = 0
+        self.lock = threading.Lock()
+        self.usage_stats = {
+            "total_requests": 0,
+            "successful_requests": 0,
+            "failed_requests": 0,
+            "rotations": 0,
+            "rate_limit_hits": 0,
+            "quota_exceeded_count": 0
+        }
+    
+    def add_endpoint(self, name: str, base_url: str, api_key: str, 
+                    rate_limit: int = 60, quota_limit: int = 1000):
+        """Add an API endpoint to the rotation pool."""
+        endpoint = APIEndpoint(
+            name=name,
+            base_url=base_url,
+            api_key=api_key,
+            rate_limit=rate_limit,
+            quota_limit=quota_limit
+        )
+        self.endpoints.append(endpoint)
+        print(f"✅ Added API endpoint: {name} (rate: {rate_limit}/min, quota: {quota_limit}/day)")
+    
+    def get_best_endpoint(self) -> Optional[APIEndpoint]:
+        """Get the best available endpoint for making a request."""
+        with self.lock:
+            if not self.endpoints:
+                return None
+            
+            # Find available endpoints
+            available_endpoints = [ep for ep in self.endpoints if ep.can_make_request()]
+            
+            if not available_endpoints:
+                print("⚠️ All API endpoints are rate limited or at quota")
+                return None
+            
+            # Select endpoint using weighted selection based on remaining capacity
+            return self._select_optimal_endpoint(available_endpoints)
+    
+    def _select_optimal_endpoint(self, available_endpoints: List[APIEndpoint]) -> APIEndpoint:
+        """Select optimal endpoint based on capacity and performance."""
+        
+        # Calculate weights based on remaining capacity and error rate
+        weighted_endpoints = []
+        
+        for endpoint in available_endpoints:
+            # Calculate remaining capacity (0-1 scale)
+            rate_capacity = (endpoint.rate_limit - endpoint.current_usage) / endpoint.rate_limit
+            quota_capacity = (endpoint.quota_limit - endpoint.daily_usage) / endpoint.quota_limit
+            
+            # Calculate error rate (lower is better)
+            error_rate = min(endpoint.error_count / 10.0, 1.0)  # Cap at 1.0
+            
+            # Combined weight (higher is better)
+            weight = (rate_capacity * 0.4 + quota_capacity * 0.4 + (1 - error_rate) * 0.2)
+            
+            weighted_endpoints.append((endpoint, weight))
+        
+        # Sort by weight (highest first)
+        weighted_endpoints.sort(key=lambda x: x[1], reverse=True)
+        
+        # Use weighted random selection for the top 3 endpoints
+        top_endpoints = weighted_endpoints[:3]
+        weights = [w for _, w in top_endpoints]
+        
+        if not weights or sum(weights) == 0:
+            return available_endpoints[0]
+        
+        # Weighted random selection
+        total_weight = sum(weights)
+        rand_val = random.uniform(0, total_weight)
+        current_weight = 0
+        
+        for (endpoint, weight) in top_endpoints:
+            current_weight += weight
+            if rand_val <= current_weight:
+                return endpoint
+        
+        return top_endpoints[0][0]  # Fallback
+    
+    def simulate_api_request(self, endpoint: APIEndpoint, request_type: str) -> Dict:
+        """Simulate an API request for demonstration purposes."""
+        
+        # Record the request
+        endpoint.record_request(success=True)
+        self.usage_stats["total_requests"] += 1
+        self.usage_stats["successful_requests"] += 1
+        
+        # Simulate response based on request type
+        if request_type == "completion":
+            return {
+                "success": True,
+                "data": {
+                    "choices": [{"text": f"Generated response from {endpoint.name}"}],
+                    "usage": {"tokens": 150}
+                },
+                "endpoint_used": endpoint.name
+            }
+        elif request_type == "embedding":
+            return {
+                "success": True,
+                "data": {
+                    "embeddings": [[0.1, 0.2, 0.3] * 100],  # Mock embedding
+                    "usage": {"tokens": 50}
+                },
+                "endpoint_used": endpoint.name
+            }
+        else:
+            return {
+                "success": True,
+                "data": {"result": f"API response from {endpoint.name}"},
+                "endpoint_used": endpoint.name
+            }
+    
+    def make_api_request(self, request_type: str = "completion") -> Dict:
+        """Make an API request with automatic rotation."""
+        
+        endpoint = self.get_best_endpoint()
+        
+        if not endpoint:
+            return {
+                "success": False,
+                "error": "No API endpoints available",
+                "usage_stats": self._get_usage_summary()
+            }
+        
+        print(f"🔄 Using endpoint: {endpoint.name} (usage: {endpoint.current_usage}/{endpoint.rate_limit})")
+        
+        # Simulate the API request
+        result = self.simulate_api_request(endpoint, request_type)
+        
+        return result
+    
+    def _get_usage_summary(self) -> Dict:
+        """Get current usage summary across all endpoints."""
+        return {
+            "total_requests": self.usage_stats["total_requests"],
+            "success_rate": (self.usage_stats["successful_requests"] / 
+                           max(1, self.usage_stats["total_requests"]) * 100),
+            "active_endpoints": len([ep for ep in self.endpoints if ep.status == APIStatus.ACTIVE]),
+            "total_endpoints": len(self.endpoints)
+        }
+    
+    def get_status_report(self) -> Dict:
+        """Get comprehensive status report of all endpoints."""
+        report = {
+            "timestamp": datetime.now().isoformat(),
+            "overall_stats": self.usage_stats.copy(),
+            "endpoints": []
+        }
+        
+        for endpoint in self.endpoints:
+            endpoint_info = {
+                "name": endpoint.name,
+                "status": endpoint.status.value,
+                "rate_usage": f"{endpoint.current_usage}/{endpoint.rate_limit}",
+                "quota_usage": f"{endpoint.daily_usage}/{endpoint.quota_limit}",
+                "error_count": endpoint.error_count,
+                "can_make_request": endpoint.can_make_request()
+            }
+            report["endpoints"].append(endpoint_info)
+        
+        return report
+
+# Global API rotation manager instance
+api_manager = APIRotationManager()
 
 # ============================================================================
 # CORE FUNCTIONS (Agent-Agnostic)
@@ -836,8 +1067,62 @@ def universal_long_running_agent_workflow(prd_content: str, project_name: str = 
 # EXAMPLE USAGE
 # ============================================================================
 
+def setup_api_rotation_demo():
+    """Setup API rotation for demonstration."""
+    global api_manager
+    
+    print("\n🔄 Setting up API rotation...")
+    
+    # Add demo API endpoints
+    api_manager.add_endpoint(
+        name="openai_primary",
+        base_url="https://api.openai.com/v1",
+        api_key="sk-demo-primary-key",
+        rate_limit=100,
+        quota_limit=10000
+    )
+    
+    api_manager.add_endpoint(
+        name="openai_backup",
+        base_url="https://api.openai.com/v1",
+        api_key="sk-demo-backup-key",
+        rate_limit=60,
+        quota_limit=5000
+    )
+    
+    api_manager.add_endpoint(
+        name="anthropic_claude",
+        base_url="https://api.anthropic.com/v1",
+        api_key="sk-ant-demo-key",
+        rate_limit=50,
+        quota_limit=8000
+    )
+    
+    print("✅ API rotation setup complete")
+    
+    # Demonstrate API rotation
+    print("\n📡 Testing API rotation...")
+    for i in range(5):
+        result = api_manager.make_api_request("completion")
+        if result["success"]:
+            print(f"  Request {i+1}: ✅ {result['endpoint_used']}")
+        else:
+            print(f"  Request {i+1}: ❌ {result['error']}")
+    
+    # Show API status
+    status = api_manager.get_status_report()
+    print(f"\n📊 API Status: {status['overall_stats']['total_requests']} total requests")
+    for endpoint in status['endpoints']:
+        print(f"  {endpoint['name']}: {endpoint['rate_usage']} rate, {endpoint['quota_usage']} quota")
+
 def main():
-    """Demonstrate the universal long-running agent with a sample PRD."""
+    """Demonstrate the universal long-running agent with API rotation and a sample PRD."""
+    
+    print("🤖 Universal Long-Running Agent with API Rotation")
+    print("=" * 55)
+    
+    # Setup API rotation demonstration
+    setup_api_rotation_demo()
     
     # Sample PRD for demonstration
     sample_prd = """
